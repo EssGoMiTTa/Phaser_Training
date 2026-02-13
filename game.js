@@ -5,16 +5,35 @@ export class Game extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('back', 'assets/back.png');
+        this.load.image('car', 'assets/car0.png');
     }
 
     create() {
-        this.add.image(0, 0, 'back').setScale(3);
-        this.text1 =this.add.text(10, 10, 'Hello World', { font: '32px Arial', fill: '#ffffff' });
+        this.car = this.physics.add.sprite(400, 300, 'car');
+        this.car.setCollideWorldBounds(true);
+        this.cursors = this.input.keyboard.createCursorKeys();
     }
 
     update() {
-        this.text1.x = this.text1.x + 2;
+        const speed = 200;
 
+        if (this.cursors.left.isDown) 
+        {
+            this.car.setVelocityX(-speed);
+        }
+        else if (this.cursors.right.isDown)
+        {
+            this.car.setVelocityX(speed);
+        }
+       else if (this.cursors.up.isDown)
+        {
+            this.car.setVelocityY(-speed);
+        } 
+        else if (this.cursors.down.isDown)
+        {
+            this.car.setVelocityY(speed);
+        }
+        else(this.car.setVelocity(0));
     }
+        
 }
