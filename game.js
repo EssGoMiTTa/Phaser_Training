@@ -6,12 +6,25 @@ export class Game extends Phaser.Scene {
 
     preload() {
         this.load.image('car', 'assets/car0.png');
+        this.load.image('coin', 'assets/coin.png');
     }
 
     create() {
         this.car = this.physics.add.sprite(400, 300, 'car');
         this.car.setCollideWorldBounds(true);
         this.cursors = this.input.keyboard.createCursorKeys();
+
+        this.coin = this.physics.add.group({
+            key: 'coin',
+            repeat: 5,
+            setXY: { x: 100, y: 100, stepX: 120 },
+            setScale: { x: 0.5, y: 0.5 }
+        });
+
+        this.score = 0;
+        this.scoreText = this.add.text(10, 10, 'Puntos: ' + this.score, { font: '32px', fill: '#ffffff' });
+
+        this.physics.add.overlap(this.car, this.coin, this.collectCoin, null, this);
     }
 
     update() {
@@ -34,6 +47,12 @@ export class Game extends Phaser.Scene {
             this.car.setVelocityY(speed);
         }
         else(this.car.setVelocity(0));
+    }
+
+    collectCoin(car, coin) {
+        coin.disableBody(true, true);
+        this.score += 10;
+        this.scoreText.setText('Puntos: ' + this.score);
     }
         
 }
