@@ -1,42 +1,70 @@
 export class Game extends Phaser.Scene {
+
     constructor() {
         super({key: 'Game'});
     }
 
     preload() {
-       this.load.spritesheet('sheet', 'assets/walk.png', 
-        {
-            frameWidth: 416,
-            frameHeight: 454
-        });
+        this.load.image('car', 'assets/car0.png');
+        this.load.image('coin', 'assets/coin.png');
     }
 
     create() {
+        this.car = this.physics.add.sprite(400, 300, 'car');
+        this.car.setCollideWorldBounds(true);
+        this.cursors = this.input.keyboard.createCursorKeys();
 
-        const walk = 
-        {
-            key: 'walk',
-            frames: this.anims.generateFrameNumbers('sheet', {frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}),
-            frameRate: 16,
-            repeat: -1
-        }
-        this.anims.create(walk)
+        this.coin = this.physics.add.group({
+            key: 'coin',
+            repeat: 5,
+            setXY: { x: 100, y: 100, stepX: 120 },
+            setScale: { x: 0.5, y: 0.5 }
+        });
 
-        this.player = this.physics.add.sprite(400, 300, 'sheet').setScale(0.4);
-        this.cursosrKeys = this.input.keyboard.createCursorKeys();
+        this.score = 0;
+        this.scoreText = this.add.text(10, 10, 'Puntos: ' + this.score, { font: '32px', fill: '#ffffff' });
+
+        this.physics.add.overlap(this.car, this.coin, this.collectCoin, null, this);
+
+        const buttonMenu = this.add.text(700, 550, 'MENÚ', {
+            fontSize: '24px',
+            fill: '#ffffff',
+            padding: { x: 10, y: 5 }
+        }).setOrigin(0.5);
+
+        buttonMenu.setInteractive();
+
+        buttonMenu.on('pointerdown', () => {
+            this.scene.start('Menu');
+        });
     }
 
     update() {
         const speed = 200;
-        if (this.cursosrKeys.right.isDown) {
-            this.player.setVelocityX(speed);
-            this.player.anims.play('walk', true);
-        }
-        else {
-            this.player.setVelocityX(0);
-            this.player.anims.stop();
-            this.player.setFrame(0);
-        }
 
+        if (this.cursors.left.isDown) 
+        {
+            this.car.setVelocityX(-speed);
+        }
+        else if (this.cursors.right.isDown)
+        {
+            this.car.setVelocityX(speed);
+        }
+       else if (this.cursors.up.isDown)
+        {
+            this.car.setVelocityY(-speed);
+        } 
+        else if (this.cursors.down.isDown)
+        {
+            this.car.setVelocityY(speed);
+        }
+        else(this.car.setVelocity(0));
     }
+
+    collectCoin(car, coin) {
+        coin.disableBody(true, true);
+        this.score += 10;
+        this.scoreText.setText('Puntos: ' + this.score);
+    }
+        
 }
