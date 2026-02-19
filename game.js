@@ -1,70 +1,113 @@
 export class Game extends Phaser.Scene {
+  constructor() {
+    super({ key: 'Game' });
+  }
 
-    constructor() {
-        super({key: 'Game'});
+  preload() {
+    this.load.image('track', 'assets/Background.png');
+    this.load.image('barrier', 'assets/barrier_3.png');
+    this.load.image('margin', 'assets/margin.png');
+    this.load.image('car', 'assets/car/car0.png');
+    this.load.image('enemy', 'assets/car/enemy0.png');
+    
+    for (let i = 1; i <= 5; i++) {
+      this.load.image(`burst${i}`, `assets/burst/${i}.png`);
+    }
+  }
+
+  create() {
+    const track = this.add.image(0, 0, 'track').setOrigin(0);
+    this.barrier = this.add.image(0, 0, 'barrier').setOrigin(0).setVisible(false);
+    this.add.image(0, 0, 'margin').setOrigin(0).setDepth(20);
+
+    this.player = this.physics.add.sprite(920, 800, 'car').setScale(0.6);
+    this.rival = this.physics.add.sprite(920, 700, 'enemy').setScale(0.6);
+
+    this.cameras.main.setBounds(0, 0, track.width, track.height);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.setZoom(1.8);
+
+    this.anims.create({
+      key: 'explode',
+      frames: [1, 2, 3, 4, 5].map(i => ({ key: `burst${i}` })),
+      frameRate: 12,
+      hideOnComplete: true
+    });
+
+    this.physics.add.overlap(this.player, this.rival, () => {
+      if (!this.isExploding) {
+        this.explode();
+      }
+    });
+
+    this.tweens.add({
+      targets: this.rival,
+      y: 100,
+      duration: 4000,
+    });
+
+    this.activeRival = false;
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.isExploding = false;
+  }
+
+  update() {
+    if (this.isExploding) return;
+
+    this.handleInput();
+    this.checkPixelCollision();
+
+    if (this.player.y < 450 && !this.activeRival) {
+      this.rivalAttack();
     }
 
-    preload() {
-        this.load.image('car', 'assets/car0.png');
-        this.load.image('coin', 'assets/coin.png');
+  }
+
+  rivalAttack(){
+    this.activeRival = true;
+
+    this.tweens.add({
+      targets: this.rival,
+      x: 960,
+      duration: 900,
+    });
+  }
+
+  handleInput() {
+    const speed = this.cursors.down.isDown ? -140 : 250;
+    const rotationSpeed = 3;
+
+    if (this.cursors.up.isDown || this.cursors.down.isDown) {
+      this.physics.velocityFromRotation(this.player.rotation - Math.PI/2, speed, this.player.body.velocity);
+    } else {
+      this.player.setVelocity(0);
     }
 
-    create() {
-        this.car = this.physics.add.sprite(400, 300, 'car');
-        this.car.setCollideWorldBounds(true);
-        this.cursors = this.input.keyboard.createCursorKeys();
-
-        this.coin = this.physics.add.group({
-            key: 'coin',
-            repeat: 5,
-            setXY: { x: 100, y: 100, stepX: 120 },
-            setScale: { x: 0.5, y: 0.5 }
-        });
-
-        this.score = 0;
-        this.scoreText = this.add.text(10, 10, 'Puntos: ' + this.score, { font: '32px', fill: '#ffffff' });
-
-        this.physics.add.overlap(this.car, this.coin, this.collectCoin, null, this);
-
-        const buttonMenu = this.add.text(700, 550, 'MENÚ', {
-            fontSize: '24px',
-            fill: '#ffffff',
-            padding: { x: 10, y: 5 }
-        }).setOrigin(0.5);
-
-        buttonMenu.setInteractive();
-
-        buttonMenu.on('pointerdown', () => {
-            this.scene.start('Menu');
-        });
+    if (this.player.body.speed > 5) {
+      const direction = this.cursors.left.isDown ? -1 : (this.cursors.right.isDown ? 1 : 0);
+      this.player.rotation += (direction * rotationSpeed) / 60;
     }
+  }
 
-    update() {
-        const speed = 200;
+  checkPixelCollision() {
+    const pixel = this.textures.getPixel(this.player.x, this.player.y, 'barrier');
 
-        if (this.cursors.left.isDown) 
-        {
-            this.car.setVelocityX(-speed);
-        }
-        else if (this.cursors.right.isDown)
-        {
-            this.car.setVelocityX(speed);
-        }
-       else if (this.cursors.up.isDown)
-        {
-            this.car.setVelocityY(-speed);
-        } 
-        else if (this.cursors.down.isDown)
-        {
-            this.car.setVelocityY(speed);
-        }
-        else(this.car.setVelocity(0));
+    if (pixel && pixel.alpha > 0) {
+      this.explode();
     }
+  }
 
-    collectCoin(car, coin) {
-        coin.disableBody(true, true);
-        this.score += 10;
-        this.scoreText.setText('Puntos: ' + this.score);
-    }
-        
+  explode() {
+    this.isExploding = true;
+    this.player.setVelocity(0).setVisible(false);
+
+    const boom = this.add.sprite(this.player.x, this.player.y, 'burst1').setScale(0.7);
+    boom.play('explode');
+
+    this.time.delayedCall(1500, () => {
+      this.player.setPosition(920, 800).setRotation(0).setVisible(true);
+      this.isExploding = false;
+    });
+  }
 }
