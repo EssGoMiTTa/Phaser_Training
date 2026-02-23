@@ -47,7 +47,7 @@ export class Game extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, track.width, track.height);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
-    this.cameras.main.setZoom(1);
+    this.cameras.main.setZoom(1.8);
 
     this.anims.create({
       key: 'explode',
@@ -69,6 +69,8 @@ export class Game extends Phaser.Scene {
     this.activeRival = false;
     this.cursors = this.input.keyboard.createCursorKeys();
     this.isExploding = false;
+
+    this.scene.launch('Hud');
   }
 
   update() {
@@ -84,14 +86,17 @@ export class Game extends Phaser.Scene {
 
   coinCollect(player, coin) {
     coin.disableBody(true, true);
+    this.registry.set('puntos', this.registry.get('puntos') + 10);
+    this.registry.set('tiempo', this.registry.get('tiempo') + 5);
     console.log('Moneda recogida!');
   }
 
 
 getmeta(player, meta) {
     if (this.hasCheckpoint) {  
+    this.scene.get('Hud').terminarJuego('¡Ganaste!');
     console.log('Meta alcanzada!');
-    this.scene.pause('Game');
+    this.scene.get('Hud').btnAgain.setVisible(true);
     }
   }
 
